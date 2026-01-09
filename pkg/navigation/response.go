@@ -3,6 +3,7 @@ package navigation
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	jsoniter "github.com/json-iterator/go"
@@ -41,6 +42,7 @@ type Response struct {
 	Forms              []Form            `json:"forms,omitempty"`
 	XhrRequests        []Request         `json:"xhr_requests,omitempty"`
 	StoredResponsePath string            `json:"stored_response_path,omitempty"`
+	Duration           time.Duration     `json:"-"`
 }
 
 func (n Response) AbsoluteURL(path string) string {

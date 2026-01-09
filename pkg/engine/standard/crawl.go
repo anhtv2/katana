@@ -8,6 +8,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/projectdiscovery/katana/pkg/engine/common"
@@ -61,8 +62,10 @@ func (c *Crawler) makeRequest(s *common.CrawlSession, request *navigation.Reques
 		}
 	}
 
+	start := time.Now()
 	resp, err := s.HttpClient.Do(req)
 	if resp != nil {
+		response.Duration = time.Since(start)
 		defer func() {
 			if resp.Body != nil && resp.StatusCode != http.StatusSwitchingProtocols {
 				_, _ = io.Copy(io.Discard, resp.Body)

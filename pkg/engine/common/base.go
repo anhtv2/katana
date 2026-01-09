@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -179,6 +181,74 @@ func (s *Shared) Output(navigationRequest *navigation.Request, navigationRespons
 		Request:   navigationRequest,
 		Response:  navigationResponse,
 		Error:     errData,
+	}
+
+	if navigationRequest != nil {
+		result.Method = navigationRequest.Method
+		result.URL = navigationRequest.URL
+		result.RequestRaw = navigationRequest.Raw
+
+		parsed, _ := url.Parse(navigationRequest.URL)
+		if parsed != nil {
+			result.Scheme = parsed.Scheme
+			result.Host = parsed.Hostname()
+			result.Path = parsed.Path
+			result.Port = parsed.Port()
+			if result.Port == "" {
+				if result.Scheme == "https" {
+					result.Port = "443"
+				} else if result.Scheme == "http" {
+					result.Port = "80"
+				}
+			}
+			result.Input = parsed.Hostname()
+
+			ips, err := net.LookupHost(parsed.Hostname())
+			if err == nil {
+				result.A = ips
+			}
+		}
+	}
+
+	if navigationResponse != nil {
+		result.StatusCode = navigationResponse.StatusCode
+		result.ContentLength = int(navigationResponse.ContentLength)
+		result.ResponseBody = navigationResponse.Body
+		result.Technologies = navigationResponse.Technologies
+
+		if navigationResponse.Headers != nil {
+			result.Header = make(map[string]string)
+			for k, v := range navigationResponse.Headers {
+				k = strings.ToLower(k)
+				k = strings.ReplaceAll(k, "-", "_")
+				result.Header[k] = v
+			}
+		}
+
+		var rawHeader []byte
+		if navigationResponse.Raw != "" {
+			parts := strings.SplitN(navigationResponse.Raw, "\r\n\r\n", 2)
+			if len(parts) > 0 {
+				result.RawHeader = parts[0]
+				rawHeader = []byte(parts[0])
+			}
+		}
+
+		result.Hashes = utils.CalculateHashes([]byte(navigationResponse.Body), rawHeader)
+		result.Words = len(strings.Fields(navigationResponse.Body))
+		result.Lines = len(strings.Split(navigationResponse.Body, "\n"))
+		result.Failed = (result.StatusCode == 0)
+
+		if ct, ok := result.Header["content_type"]; ok {
+			result.ContentType = ct
+		}
+		if svr, ok := result.Header["server"]; ok {
+			result.WebServer = svr
+		}
+		if navigationResponse.Reader != nil {
+			result.Title = navigationResponse.Reader.Find("title").Text()
+		}
+		result.ResponseTime = navigationResponse.Duration.String()
 	}
 
 	outputErr := s.Options.OutputWriter.Write(result)
