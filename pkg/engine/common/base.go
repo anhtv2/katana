@@ -183,6 +183,13 @@ func (s *Shared) Output(navigationRequest *navigation.Request, navigationRespons
 		Error:     errData,
 	}
 
+	if navigationResponse != nil && navigationResponse.Resp != nil && navigationResponse.Resp.Request != nil && navigationResponse.Resp.Request.URL != nil {
+		finalURL := navigationResponse.Resp.Request.URL.String()
+		if finalURL != "" && finalURL != result.URL {
+			result.FinalURL = finalURL
+		}
+	}
+
 	if navigationRequest != nil {
 		result.Method = navigationRequest.Method
 		result.URL = navigationRequest.URL

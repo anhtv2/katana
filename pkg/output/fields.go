@@ -17,6 +17,7 @@ import (
 // FieldNames is a list of supported field names
 var FieldNames = []string{
 	"url",
+	"final_url",
 	"path",
 	"fqdn",
 	"rdn",
@@ -121,6 +122,10 @@ func formatField(output *Result, fields string) []fieldOutput {
 		switch f {
 		case "url":
 			svalue = append(svalue, fieldOutput{field: "url", value: output.Request.URL})
+		case "final_url":
+			if output.FinalURL != "" {
+				svalue = append(svalue, fieldOutput{field: "final_url", value: output.FinalURL})
+			}
 		case "rdn":
 			hostname := parsed.Hostname()
 			etld, _ := publicsuffix.EffectiveTLDPlusOne(hostname)
@@ -204,6 +209,8 @@ func getValueForField(output *Result, parsed *url.URL, hostname, rdn, rurl, fiel
 	switch field {
 	case "url":
 		return output.Request.URL
+	case "final_url":
+		return output.FinalURL
 	case "path":
 		return parsed.Path
 	case "fqdn":

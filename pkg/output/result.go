@@ -18,6 +18,7 @@ type Result struct {
 	Port            string                 `json:"port,omitempty"`
 	URL             string                 `json:"url,omitempty"`
 	Input           string                 `json:"input,omitempty"`
+	FinalURL        string                 `json:"final_url,omitempty"`
 	Title           string                 `json:"title,omitempty"`
 	Scheme          string                 `json:"scheme,omitempty"`
 	WebServer       string                 `json:"webserver,omitempty"`
