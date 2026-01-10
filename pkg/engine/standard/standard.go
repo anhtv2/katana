@@ -27,8 +27,8 @@ func (c *Crawler) Close() error {
 }
 
 // Crawl crawls a URL with the specified options
-func (c *Crawler) Crawl(rootURL string) error {
-	crawlSession, err := c.NewCrawlSessionWithURL(rootURL)
+func (c *Crawler) Crawl(rawInput, rootURL string) error {
+	crawlSession, err := c.NewCrawlSessionWithURL(rawInput, rootURL)
 	if err != nil {
 		return errkit.Wrap(err, "standard")
 	}

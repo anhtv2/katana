@@ -1,6 +1,6 @@
 package engine
 
 type Engine interface {
-	Crawl(string) error
+	Crawl(rawInput, rootURL string) error
 	Close() error
 }

@@ -143,7 +143,7 @@ func (c *Crawler) GetCrawlGraph() *graph.CrawlGraph {
 	return c.crawlGraph
 }
 
-func (c *Crawler) Crawl(URL string) error {
+func (c *Crawler) Crawl(_ string, URL string) error {
 	defer func() {
 		if c.diagnostics == nil {
 			return

@@ -88,7 +88,7 @@ func validateScopeFunc(h *Headless, URL string) browser.ScopeValidator {
 }
 
 // Crawl executes the headless crawling on a given URL
-func (h *Headless) Crawl(URL string) error {
+func (h *Headless) Crawl(_ string, URL string) error {
 	if h.debugger != nil {
 		h.debugger.StartURL(URL, 0)
 	}
@@ -158,7 +158,7 @@ func (h *Headless) Crawl(URL string) error {
 	}
 	defer headlessCrawler.Close()
 
-	if err = headlessCrawler.Crawl(URL); err != nil {
+	if err = headlessCrawler.Crawl("", URL); err != nil {
 		return err
 	}
 	return nil

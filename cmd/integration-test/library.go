@@ -51,7 +51,7 @@ func (h *goIntegrationTest) Execute() error {
 		}
 	}()
 	var input = "https://public-firing-range.appspot.com"
-	err = crawler.Crawl(input)
+	err = crawler.Crawl(input, input)
 	if err != nil {
 		return err
 	}
