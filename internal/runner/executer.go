@@ -20,7 +20,8 @@ func (r *Runner) ExecuteCrawling() error {
 	}
 
 	for _, input := range inputs {
-		_ = r.state.InFlightUrls.Set(addSchemeIfNotExists(input), struct{}{})
+		normalized := addSchemeIfNotExists(input)
+		_ = r.state.InFlightUrls.Set(normalized, struct{}{})
 	}
 
 	defer func() {
@@ -36,15 +37,16 @@ func (r *Runner) ExecuteCrawling() error {
 			continue
 		}
 		wg.Add()
-		input = addSchemeIfNotExists(input)
-		go func(input string) {
+		rawInput := input
+		normalized := addSchemeIfNotExists(rawInput)
+		go func(rawInput, normalized string) {
 			defer wg.Done()
 
-			if err := r.crawler.Crawl(input); err != nil {
-				gologger.Warning().Msgf("Could not crawl %s: %s", input, err)
+			if err := r.crawler.Crawl(rawInput, normalized); err != nil {
+				gologger.Warning().Msgf("Could not crawl %s: %s", normalized, err)
 			}
-			r.state.InFlightUrls.Delete(input)
-		}(input)
+			r.state.InFlightUrls.Delete(normalized)
+		}(rawInput, normalized)
 	}
 	wg.Wait()
 	return nil

@@ -194,6 +194,9 @@ func (s *Shared) Output(navigationRequest *navigation.Request, navigationRespons
 		result.Method = navigationRequest.Method
 		result.URL = navigationRequest.URL
 		result.RequestRaw = navigationRequest.Raw
+		if navigationRequest.Source != "" {
+			result.Input = navigationRequest.Source
+		}
 
 		parsed, _ := url.Parse(navigationRequest.URL)
 		if parsed != nil {
@@ -208,9 +211,9 @@ func (s *Shared) Output(navigationRequest *navigation.Request, navigationRespons
 					result.Port = "80"
 				}
 			}
-			// result.Input = parsed.Hostname()
-			// Preserve original host:port (httpx-compatible) instead of stripping port
-			result.Input = parsed.Host
+			if result.Input == "" {
+				result.Input = parsed.Host
+			}
 
 			ips, err := net.LookupHost(parsed.Hostname())
 			if err == nil {
@@ -278,6 +281,7 @@ type CrawlSession struct {
 	Queue      *queue.Queue
 	HttpClient *retryablehttp.Client
 	Browser    *rod.Browser
+	RawInput   string
 }
 
 // NewCrawlSessionWithURL creates and initializes a new crawl session for the specified URL.
@@ -289,7 +293,7 @@ type CrawlSession struct {
 //  5. Sets up the HTTP client with response parsing callbacks
 //
 // Returns the initialized CrawlSession or an error if initialization fails.
-func (s *Shared) NewCrawlSessionWithURL(URL string) (*CrawlSession, error) {
+func (s *Shared) NewCrawlSessionWithURL(rawInput string, URL string) (*CrawlSession, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	if s.Options.Options.CrawlDuration.Seconds() > 0 {
 		//nolint
@@ -308,7 +312,7 @@ func (s *Shared) NewCrawlSessionWithURL(URL string) (*CrawlSession, error) {
 		cancel()
 		return nil, err
 	}
-	queue.Push(&navigation.Request{Method: http.MethodGet, URL: URL, Depth: 0, SkipValidation: true}, 0)
+	queue.Push(&navigation.Request{Method: http.MethodGet, URL: URL, Depth: 0, SkipValidation: true, Source: rawInput}, 0)
 
 	if s.KnownFiles != nil {
 		navigationRequests, err := s.KnownFiles.Request(URL)
@@ -349,6 +353,7 @@ func (s *Shared) NewCrawlSessionWithURL(URL string) (*CrawlSession, error) {
 		Hostname:   hostname,
 		Queue:      queue,
 		HttpClient: httpclient,
+		RawInput:   rawInput,
 	}
 	return crawlSession, nil
 }
@@ -378,6 +383,8 @@ func (s *Shared) Do(crawlSession *CrawlSession, doRequest DoRequestFunc) error {
 		if !ok {
 			continue
 		}
+
+		req.Source = crawlSession.RawInput
 
 		if !utils.IsURL(req.URL) {
 			if s.Options.Options.OnSkipURL != nil {

@@ -88,7 +88,7 @@ func validateScopeFunc(h *Headless, URL string) browser.ScopeValidator {
 }
 
 // Crawl executes the headless crawling on a given URL
-func (h *Headless) Crawl(URL string) error {
+func (h *Headless) Crawl(rawInput, URL string) error {
 	if h.debugger != nil {
 		h.debugger.StartURL(URL, 0)
 	}
@@ -118,8 +118,14 @@ func (h *Headless) Crawl(URL string) error {
 			if scopeValidator != nil && !scopeValidator(rr.Request.URL) {
 				return
 			}
-			navigationRequests := h.performAdditionalAnalysis(rr)
+			rr.Input = rawInput
+			rr.Request.Source = rawInput
+			navigationRequests := h.performAdditionalAnalysis(rr, rawInput)
 			for _, req := range navigationRequests {
+				if req.Request != nil {
+					req.Request.Source = rawInput
+				}
+				req.Input = rawInput
 				if err := h.options.OutputWriter.Write(req); err != nil {
 					h.logger.Debug("failed to write navigation result",
 						slog.String("url", func() string {
@@ -171,7 +177,7 @@ func (h *Headless) Close() error {
 	return nil
 }
 
-func (h *Headless) performAdditionalAnalysis(rr *output.Result) []*output.Result {
+func (h *Headless) performAdditionalAnalysis(rr *output.Result, rawInput string) []*output.Result {
 	responseParser := parser.NewResponseParser()
 	newNavigations := responseParser.ParseResponse(rr.Response)
 
@@ -187,9 +193,11 @@ func (h *Headless) performAdditionalAnalysis(rr *output.Result) []*output.Result
 			)
 			continue
 		}
+		resp.Source = rawInput
 
 		navigationRequests = append(navigationRequests, &output.Result{
 			Request: resp,
+			Input:   rawInput,
 		})
 	}
 	return navigationRequests
