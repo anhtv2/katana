@@ -208,7 +208,9 @@ func (s *Shared) Output(navigationRequest *navigation.Request, navigationRespons
 					result.Port = "80"
 				}
 			}
-			result.Input = parsed.Hostname()
+			// result.Input = parsed.Hostname()
+			// Preserve original host:port (httpx-compatible) instead of stripping port
+			result.Input = parsed.Host
 
 			ips, err := net.LookupHost(parsed.Hostname())
 			if err == nil {
